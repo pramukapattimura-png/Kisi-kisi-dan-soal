@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply text-gray-900 antialiased;
+  }
+}
+
+@layer components {
+  .btn-tosca {
+    @apply bg-[#00796B] text-white font-bold py-2 px-6 rounded-lg hover:bg-[#004D40] transition-all transform active:scale-95 shadow-md;
+  }
+  
+  .input-tosca {
+    @apply w-full px-4 py-2 rounded-lg border border-[#B2DFDB] focus:ring-2 focus:ring-[#00796B] focus:border-transparent outline-none transition-all;
+  }
+}
+
+/* Custom Table Styles for Output */
+.output-table {
+  @apply w-full border-collapse border border-gray-300 text-sm;
+}
+
+.output-table th {
+  @apply bg-[#00796B] text-white p-2 border border-gray-300 font-bold;
+}
+
+.output-table td {
+  @apply p-2 border border-gray-300;
+}
+
+/* Print Styles */
+@media print {
+  .no-print {
+    display: none;
+  }
+  
+  body {
+    background: white;
+  }
+  
+  .print-container {
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+    border: none;
+  }
+}
