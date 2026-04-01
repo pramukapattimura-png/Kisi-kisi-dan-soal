@@ -5,13 +5,15 @@ export interface AppData {
   nipGuru: string;
   namaKepalaMadrasah: string;
   nipKepalaMadrasah: string;
+  jenisAsesmen: string;
   
   // Step 2: Main Input
   fase: "A" | "B" | "C";
   kelas: string;
   mapel: string;
   tahunPelajaran: string;
-  semester: string;
+  inputMethod: 'manual' | 'pdf';
+  pdfData: string | null; // Base64 string of the PDF
   cp: string;
   tp: string;
   materiEsensial: string;

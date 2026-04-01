@@ -15,28 +15,245 @@ export const Step3: React.FC<Step3Props> = ({ data, content, onReset, onEdit }) 
   };
 
   const downloadDoc = () => {
-    const html = document.getElementById('output-content')?.innerHTML || '';
+    const contentElement = document.getElementById('output-content');
+    if (!contentElement) return;
+
+    // Clone element to modify it for export without affecting UI
+    const clone = contentElement.cloneNode(true) as HTMLElement;
+    
+    // Remove elements that shouldn't be in the Word doc
+    clone.querySelectorAll('.no-print').forEach(el => el.remove());
+    
+    // Remove all SVGs (icons)
+    clone.querySelectorAll('svg').forEach(el => el.remove());
+
+    const html = clone.innerHTML;
+    
+    // Process clone for Word-specific layout (using tables for alignment)
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    
+    // Transform question rows to tables
+    tempDiv.querySelectorAll('.question-row').forEach(row => {
+      const numEl = row.querySelector('.question-num');
+      const contentEl = row.querySelector('.question-content');
+      if (numEl && contentEl) {
+        const num = numEl.textContent;
+        const content = contentEl.innerHTML;
+        const table = document.createElement('table');
+        table.className = 'border-none';
+        table.style.marginBottom = '6pt';
+        table.style.width = '100%';
+        table.innerHTML = `
+          <tr>
+            <td style="width: 25pt; font-weight: bold; vertical-align: top; padding: 0; border: none;">${num}</td>
+            <td style="vertical-align: top; padding: 0; border: none;">${content}</td>
+          </tr>
+        `;
+        row.parentNode?.replaceChild(table, row);
+      }
+    });
+
+    // Transform answer rows (Isian/Uraian)
+    tempDiv.querySelectorAll('.answer-row').forEach(row => {
+      const numEl = row.querySelector('.font-bold');
+      const contentEl = row.querySelector('.flex-1');
+      if (numEl && contentEl) {
+        const num = numEl.textContent;
+        const content = contentEl.innerHTML;
+        const table = document.createElement('table');
+        table.className = 'border-none';
+        table.style.marginBottom = '2pt';
+        table.style.width = '100%';
+        table.innerHTML = `
+          <tr>
+            <td style="width: 25pt; font-weight: bold; vertical-align: top; padding: 0; border: none;">${num}</td>
+            <td style="vertical-align: top; padding: 0; border: none;">${content}</td>
+          </tr>
+        `;
+        row.parentNode?.replaceChild(table, row);
+      }
+    });
+
+    // Transform PG answer grid
+    tempDiv.querySelectorAll('.answer-grid').forEach(grid => {
+      const items = Array.from(grid.querySelectorAll('.answer-item'));
+      if (items.length > 0) {
+        const table = document.createElement('table');
+        table.className = 'border-none';
+        table.style.width = '100%';
+        let tableBody = '';
+        for (let i = 0; i < items.length; i += 5) {
+          tableBody += '<tr>';
+          for (let j = 0; j < 5; j++) {
+            const item = items[i + j];
+            if (item) {
+              const num = item.querySelector('.font-bold')?.textContent || '';
+              const val = item.querySelector('span:last-child')?.textContent || '';
+              tableBody += `
+                <td style="width: 20%; padding: 2pt; border: none; font-size: 10pt;">
+                  <span style="font-weight: bold;">${num}</span> ${val}
+                </td>
+              `;
+            } else {
+              tableBody += '<td style="width: 20%; border: none;"></td>';
+            }
+          }
+          tableBody += '</tr>';
+        }
+        table.innerHTML = tableBody;
+        grid.parentNode?.replaceChild(table, grid);
+      }
+    });
+
+    // Transform option grids to tables
+    tempDiv.querySelectorAll('.grid').forEach(grid => {
+      const options = Array.from(grid.querySelectorAll('.option-row'));
+      if (options.length === 4) {
+        // Special handling for 4 options to get a|c, b|d layout
+        const table = document.createElement('table');
+        table.className = 'border-none';
+        table.style.marginTop = '2pt';
+        table.style.width = '100%';
+        
+        const getOptHtml = (opt: Element) => {
+          const letter = opt.querySelector('.option-letter')?.textContent || '';
+          const text = opt.querySelector('span:last-child')?.textContent || '';
+          return `<span style="font-weight: bold;">${letter}</span> ${text}`;
+        };
+
+        table.innerHTML = `
+          <tr>
+            <td style="width: 50%; padding: 0; vertical-align: top; border: none;">${getOptHtml(options[0])}</td>
+            <td style="width: 50%; padding: 0; vertical-align: top; border: none;">${getOptHtml(options[2])}</td>
+          </tr>
+          <tr>
+            <td style="width: 50%; padding: 0; vertical-align: top; border: none;">${getOptHtml(options[1])}</td>
+            <td style="width: 50%; padding: 0; vertical-align: top; border: none;">${getOptHtml(options[3])}</td>
+          </tr>
+        `;
+        grid.parentNode?.replaceChild(table, grid);
+      } else if (options.length > 0) {
+        // Fallback for other number of options
+        const table = document.createElement('table');
+        table.className = 'border-none';
+        table.style.marginTop = '2pt';
+        table.style.width = '100%';
+        let tableBody = '';
+        for (let i = 0; i < options.length; i += 2) {
+          tableBody += '<tr>';
+          const opt1 = options[i];
+          const letter1 = opt1.querySelector('.option-letter')?.textContent || '';
+          const text1 = opt1.querySelector('span:last-child')?.textContent || '';
+          tableBody += `
+            <td style="width: 50%; padding: 0; vertical-align: top; border: none;">
+              <span style="font-weight: bold;">${letter1}</span> ${text1}
+            </td>
+          `;
+          const opt2 = options[i+1];
+          if (opt2) {
+            const letter2 = opt2.querySelector('.option-letter')?.textContent || '';
+            const text2 = opt2.querySelector('span:last-child')?.textContent || '';
+            tableBody += `
+              <td style="width: 50%; padding: 0; vertical-align: top; border: none;">
+                <span style="font-weight: bold;">${letter2}</span> ${text2}
+              </td>
+            `;
+          } else {
+            tableBody += '<td style="width: 50%; border: none;"></td>';
+          }
+          tableBody += '</tr>';
+        }
+        table.innerHTML = tableBody;
+        grid.parentNode?.replaceChild(table, grid);
+      }
+    });
+
+    const processedHtml = tempDiv.innerHTML;
+
     const fullHtml = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
         <head>
           <meta charset="utf-8">
           <title>Export</title>
+          <!--[if gte mso 9]>
+          <xml>
+            <w:WordDocument>
+              <w:View>Print</w:View>
+              <w:Zoom>100</w:Zoom>
+              <w:DoNotOptimizeForBrowser/>
+            </w:WordDocument>
+          </xml>
+          <![endif]-->
           <style>
-            @page { size: 21cm 29.7cm; margin: 2cm; }
-            body { font-family: 'Times New Roman', serif; font-size: 11pt; }
-            table { border-collapse: collapse; width: 100%; margin-bottom: 15px; }
-            th, td { border: 1px solid black; padding: 5px; text-align: left; vertical-align: top; }
-            th { background-color: #E0F2F1; }
+            @page { 
+              size: 21cm 29.7cm; 
+              margin: 2cm 2cm 2cm 2cm; 
+              mso-page-orientation: portrait;
+            }
+            body { 
+              font-family: 'Times New Roman', serif; 
+              font-size: 11pt; 
+              line-height: 1.0;
+              color: black;
+              mso-line-height-rule: exactly;
+            }
+            p { 
+              margin: 0; 
+              padding: 0; 
+              line-height: 1.0;
+              mso-line-height-rule: exactly;
+            }
+            table { 
+              border-collapse: collapse; 
+              width: 100%; 
+              margin-bottom: 10px; 
+              border: 1px solid black;
+              mso-table-lspace: 0pt;
+              mso-table-rspace: 0pt;
+            }
+            th, td { 
+              border: 1px solid black; 
+              padding: 4px; 
+              text-align: left; 
+              vertical-align: top; 
+            }
+            .border-none, .border-none td, .border-none th {
+              border: none !important;
+            }
+            .border-dotted {
+              border-bottom: 1px dotted black !important;
+            }
+            .border-b {
+              border-bottom: 1px solid black;
+            }
+            .border-r {
+              border-right: 1px solid black;
+            }
+            th { 
+              background-color: #f3f4f6; 
+              font-weight: bold;
+            }
             .text-center { text-align: center; }
+            .text-right { text-align: right; }
+            .text-justify { text-align: justify; }
             .font-bold { font-weight: bold; }
+            .font-medium { font-weight: 500; }
             .uppercase { text-transform: uppercase; }
             .underline { text-decoration: underline; }
             .mt-4 { margin-top: 1rem; }
+            .mt-8 { margin-top: 2rem; }
+            .mb-2 { margin-bottom: 0.5rem; }
             .mb-4 { margin-bottom: 1rem; }
+            .question-row { margin-bottom: 6pt; }
+            .option-row { margin-bottom: 2pt; }
+            .w-full { width: 100%; }
+            .bg-[#E0F2F1] { background-color: #E0F2F1; }
+            section { page-break-after: always; }
           </style>
         </head>
         <body>
-          ${html}
+          ${processedHtml}
         </body>
       </html>
     `;
@@ -87,41 +304,32 @@ export const Step3: React.FC<Step3Props> = ({ data, content, onReset, onEdit }) 
           </div>
           
           <div className="text-center mb-6">
-            <h4 className="text-lg font-bold uppercase">KISI-KISI PENULISAN SOAL</h4>
+            <h4 className="text-lg font-bold uppercase">KISI-KISI {data.jenisAsesmen}</h4>
             <h4 className="text-lg font-bold uppercase">{data.namaSatuanPendidikan}</h4>
+            <h4 className="text-lg font-bold uppercase">TAHUN PELAJARAN {data.tahunPelajaran}</h4>
           </div>
 
           <table className="w-full text-sm mb-6 border-collapse">
             <tbody>
               <tr>
-                <td className="py-1 w-[200px]">Nama Guru</td>
-                <td className="py-1 w-4">:</td>
+                <td className="py-1 w-[160px]" style={{ width: '120pt' }}>Nama Guru</td>
+                <td className="py-1 w-4" style={{ width: '10pt' }}>:</td>
                 <td className="py-1 font-medium">{data.namaGuru}</td>
               </tr>
               <tr>
-                <td className="py-1">Nama Satuan Pendidikan</td>
-                <td className="py-1">:</td>
+                <td className="py-1" style={{ width: '120pt' }}>Nama Satuan Pendidikan</td>
+                <td className="py-1" style={{ width: '10pt' }}>:</td>
                 <td className="py-1 font-medium">{data.namaSatuanPendidikan}</td>
               </tr>
               <tr>
-                <td className="py-1">Mata Pelajaran</td>
-                <td className="py-1">:</td>
+                <td className="py-1" style={{ width: '120pt' }}>Mata Pelajaran</td>
+                <td className="py-1" style={{ width: '10pt' }}>:</td>
                 <td className="py-1 font-medium">{data.mapel}</td>
               </tr>
               <tr>
-                <td className="py-1">Topik Pembelajaran</td>
-                <td className="py-1">:</td>
-                <td className="py-1 font-medium">{data.materiEsensial}</td>
-              </tr>
-              <tr>
-                <td className="py-1">Fase / Kelas / Semester</td>
-                <td className="py-1">:</td>
-                <td className="py-1 font-medium">{data.fase} / {data.kelas} / {data.semester}</td>
-              </tr>
-              <tr>
-                <td className="py-1">Tahun Pelajaran</td>
-                <td className="py-1">:</td>
-                <td className="py-1 font-medium">{data.tahunPelajaran}</td>
+                <td className="py-1" style={{ width: '120pt' }}>Fase / Kelas</td>
+                <td className="py-1" style={{ width: '10pt' }}>:</td>
+                <td className="py-1 font-medium">{data.fase} / {data.kelas}</td>
               </tr>
             </tbody>
           </table>
@@ -157,22 +365,26 @@ export const Step3: React.FC<Step3Props> = ({ data, content, onReset, onEdit }) 
             </table>
           </div>
 
-          <div className="grid grid-cols-2 mt-12 text-sm">
-            <div className="text-center">
-              <p>Mengetahui,</p>
-              <p>Kepala Madrasah</p>
-              <div className="h-24"></div>
-              <p className="font-bold underline">{data.namaKepalaMadrasah}</p>
-              <p>NIP. {data.nipKepalaMadrasah || '-'}</p>
-            </div>
-            <div className="text-center">
-              <p>Jakarta, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-              <p>Guru Mata Pelajaran</p>
-              <div className="h-24"></div>
-              <p className="font-bold underline">{data.namaGuru}</p>
-              <p>NIP. {data.nipGuru || '-'}</p>
-            </div>
-          </div>
+          <table className="w-full mt-12 text-sm border-none">
+            <tbody>
+              <tr>
+                <td className="text-center border-none w-1/2">
+                  <p>Mengetahui,</p>
+                  <p>Kepala Madrasah</p>
+                  <div className="h-24"></div>
+                  <p className="font-bold underline">{data.namaKepalaMadrasah}</p>
+                  <p>NIP. {data.nipKepalaMadrasah || '-'}</p>
+                </td>
+                <td className="text-center border-none w-1/2">
+                  <p>Jakarta, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                  <p>Guru Mata Pelajaran</p>
+                  <div className="h-24"></div>
+                  <p className="font-bold underline">{data.namaGuru}</p>
+                  <p>NIP. {data.nipGuru || '-'}</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </section>
 
         {/* SOAL SECTION */}
@@ -183,7 +395,7 @@ export const Step3: React.FC<Step3Props> = ({ data, content, onReset, onEdit }) 
           </div>
 
           <div className="text-center space-y-1 mb-8">
-            <h4 className="text-lg font-bold uppercase">PENILAIAN AKHIR SEMESTER {data.semester.toUpperCase()}</h4>
+            <h4 className="text-lg font-bold uppercase">{data.jenisAsesmen}</h4>
             <h4 className="text-lg font-bold uppercase">{data.namaSatuanPendidikan}</h4>
             <p className="text-sm">Tahun Pelajaran {data.tahunPelajaran}</p>
           </div>
@@ -195,13 +407,13 @@ export const Step3: React.FC<Step3Props> = ({ data, content, onReset, onEdit }) 
                   <table className="w-full">
                     <tbody>
                       <tr>
-                        <td className="w-32">Mata Pelajaran</td>
-                        <td className="w-4">:</td>
+                        <td className="w-32" style={{ width: '100pt' }}>Mata Pelajaran</td>
+                        <td className="w-4" style={{ width: '10pt' }}>:</td>
                         <td>{data.mapel}</td>
                       </tr>
                       <tr>
-                        <td>Kelas</td>
-                        <td>:</td>
+                        <td style={{ width: '100pt' }}>Kelas</td>
+                        <td style={{ width: '10pt' }}>:</td>
                         <td>{data.kelas}</td>
                       </tr>
                     </tbody>
@@ -211,13 +423,13 @@ export const Step3: React.FC<Step3Props> = ({ data, content, onReset, onEdit }) 
                   <table className="w-full">
                     <tbody>
                       <tr>
-                        <td className="w-32">Nama</td>
-                        <td className="w-4">:</td>
+                        <td className="w-32" style={{ width: '80pt' }}>Nama</td>
+                        <td className="w-4" style={{ width: '10pt' }}>:</td>
                         <td className="border-b border-dotted border-black">............................</td>
                       </tr>
                       <tr>
-                        <td>No. Absen</td>
-                        <td>:</td>
+                        <td style={{ width: '80pt' }}>No. Absen</td>
+                        <td style={{ width: '10pt' }}>:</td>
                         <td className="border-b border-dotted border-black">............................</td>
                       </tr>
                     </tbody>
@@ -233,25 +445,20 @@ export const Step3: React.FC<Step3Props> = ({ data, content, onReset, onEdit }) 
               <h5 className="font-bold mb-4">I. Berilah tanda silang (X) pada huruf a, b, c, atau d di depan jawaban yang paling benar!</h5>
               <div className="space-y-6">
                 {content.soal.filter(s => s.tipe === 'PG').map((s) => (
-                  <div key={s.no} className="mb-4">
-                    <table className="w-full border-none">
-                      <tbody>
-                        <tr>
-                          <td className="w-6 align-top">{s.no}. </td>
-                          <td className="align-top">
-                            <p className="mb-2">{s.pertanyaan}</p>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
-                              {s.opsi?.map((opt, idx) => (
-                                <div key={idx} className="flex gap-2">
-                                  <span className="font-semibold">{String.fromCharCode(97 + idx)}.</span>
-                                  <span>{cleanOption(opt)}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                  <div key={s.no} className="question-row flex gap-3">
+                    <div className="question-num font-bold min-w-[25px]">{s.no}.</div>
+                    <div className="question-content flex-1">
+                      <p className="mb-2 text-justify">{s.pertanyaan}</p>
+                      <div className="grid grid-flow-col grid-rows-2 gap-x-8 gap-y-1 mt-2">
+                        {s.opsi?.map((opt, idx) => (
+                          <div key={idx} className="option-row flex gap-2">
+                            <span className="option-letter font-semibold">{String.fromCharCode(97 + idx)}.</span>
+                            <span>{cleanOption(opt)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="clear"></div>
                   </div>
                 ))}
               </div>
@@ -262,15 +469,12 @@ export const Step3: React.FC<Step3Props> = ({ data, content, onReset, onEdit }) 
               <h5 className="font-bold mb-4">II. Isilah titik-titik di bawah ini dengan jawaban yang singkat dan benar!</h5>
               <div className="space-y-4">
                 {content.soal.filter(s => s.tipe === 'Isian').map((s) => (
-                  <div key={s.no} className="mb-2">
-                    <table className="w-full border-none">
-                      <tbody>
-                        <tr>
-                          <td className="w-6 align-top">{s.no}. </td>
-                          <td className="align-top">{s.pertanyaan}</td>
-                        </tr>
-                      </tbody>
-                    </table>
+                  <div key={s.no} className="question-row flex gap-3">
+                    <div className="question-num font-bold min-w-[25px]">{s.no}.</div>
+                    <div className="question-content flex-1 text-justify">
+                      {s.pertanyaan}
+                    </div>
+                    <div className="clear"></div>
                   </div>
                 ))}
               </div>
@@ -281,15 +485,12 @@ export const Step3: React.FC<Step3Props> = ({ data, content, onReset, onEdit }) 
               <h5 className="font-bold mb-4">III. Jawablah pertanyaan-pertanyaan di bawah ini dengan uraian yang jelas dan benar!</h5>
               <div className="space-y-6">
                 {content.soal.filter(s => s.tipe === 'Uraian').map((s) => (
-                  <div key={s.no} className="mb-4">
-                    <table className="w-full border-none">
-                      <tbody>
-                        <tr>
-                          <td className="w-6 align-top">{s.no}. </td>
-                          <td className="align-top">{s.pertanyaan}</td>
-                        </tr>
-                      </tbody>
-                    </table>
+                  <div key={s.no} className="question-row flex gap-3">
+                    <div className="question-num font-bold min-w-[25px]">{s.no}.</div>
+                    <div className="question-content flex-1 text-justify">
+                      {s.pertanyaan}
+                    </div>
+                    <div className="clear"></div>
                   </div>
                 ))}
               </div>
@@ -305,37 +506,49 @@ export const Step3: React.FC<Step3Props> = ({ data, content, onReset, onEdit }) 
           </div>
           
           <div className="text-center mb-6">
-            <h4 className="text-lg font-bold uppercase">KUNCI JAWABAN</h4>
+            <h4 className="text-lg font-bold uppercase">KUNCI JAWABAN {data.jenisAsesmen}</h4>
             <h4 className="text-lg font-bold uppercase">{data.mapel} KELAS {data.kelas}</h4>
+            <h4 className="text-lg font-bold uppercase">TAHUN PELAJARAN {data.tahunPelajaran}</h4>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-2">
-              <h5 className="font-bold text-sm">I. Pilihan Ganda</h5>
-              <div className="grid grid-cols-5 gap-2">
-                {content.kunciJawaban.filter(k => content.soal.find(s => s.no === k.no)?.tipe === 'PG').map(k => (
-                  <div key={k.no} className="text-xs border border-black p-1 text-center">
-                    {k.no}. {k.jawaban}
-                  </div>
-                ))}
+          <div className="space-y-6">
+            <div>
+              <h5 className="font-bold text-sm mb-2">I. Pilihan Ganda</h5>
+              <div className="answer-grid grid grid-cols-5 gap-2">
+                {content.kunciJawaban
+                  .filter(k => content.soal.find(s => s.no === k.no)?.tipe === 'PG')
+                  .map((k) => (
+                    <div key={k.no} className="answer-item flex gap-1 text-sm">
+                      <span className="font-bold">{k.no}.</span>
+                      <span>{k.jawaban}</span>
+                    </div>
+                  ))}
               </div>
             </div>
-            <div className="space-y-4">
-              <div>
-                <h5 className="font-bold text-sm mb-2">II. Isian</h5>
-                <div className="space-y-1">
-                  {content.kunciJawaban.filter(k => content.soal.find(s => s.no === k.no)?.tipe === 'Isian').map(k => (
-                    <p key={k.no} className="text-xs">{k.no}. {k.jawaban}</p>
+            <div>
+              <h5 className="font-bold text-sm mb-2">II. Isian</h5>
+              <div className="space-y-1">
+                {content.kunciJawaban
+                  .filter(k => content.soal.find(s => s.no === k.no)?.tipe === 'Isian')
+                  .map((k) => (
+                    <div key={k.no} className="answer-row flex gap-3 text-sm">
+                      <div className="font-bold min-w-[25px]">{k.no}.</div>
+                      <div className="flex-1 text-justify">{k.jawaban}</div>
+                    </div>
                   ))}
-                </div>
               </div>
-              <div>
-                <h5 className="font-bold text-sm mb-2">III. Uraian</h5>
-                <div className="space-y-1">
-                  {content.kunciJawaban.filter(k => content.soal.find(s => s.no === k.no)?.tipe === 'Uraian').map(k => (
-                    <p key={k.no} className="text-xs">{k.no}. {k.jawaban}</p>
+            </div>
+            <div>
+              <h5 className="font-bold text-sm mb-2">III. Uraian</h5>
+              <div className="space-y-2">
+                {content.kunciJawaban
+                  .filter(k => content.soal.find(s => s.no === k.no)?.tipe === 'Uraian')
+                  .map((k) => (
+                    <div key={k.no} className="answer-row flex gap-3 text-sm">
+                      <div className="font-bold min-w-[25px]">{k.no}.</div>
+                      <div className="flex-1 text-justify">{k.jawaban}</div>
+                    </div>
                   ))}
-                </div>
               </div>
             </div>
           </div>

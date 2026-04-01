@@ -4,20 +4,32 @@ import { AppData, GeneratedContent } from "../types";
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 export async function generateSoalAndKisi(data: AppData): Promise<GeneratedContent> {
-  const prompt = `
+  let prompt = `
     Anda adalah seorang pakar pendidikan Madrasah Ibtidaiyah (MI) di Indonesia.
     Buatkan Kisi-kisi, Soal, dan Kunci Jawaban berdasarkan data berikut:
     
     Satuan Pendidikan: ${data.namaSatuanPendidikan}
+    Jenis Asesmen: ${data.jenisAsesmen}
     Mata Pelajaran: ${data.mapel}
     Fase: ${data.fase}
     Kelas: ${data.kelas}
-    Semester: ${data.semester}
     Tahun Pelajaran: ${data.tahunPelajaran}
+`;
+
+  if (data.inputMethod === 'manual') {
+    prompt += `
     Capaian Pembelajaran (CP): ${data.cp}
     Tujuan Pembelajaran (TP): ${data.tp}
     Materi Esensial: ${data.materiEsensial}
-    
+    `;
+  } else {
+    prompt += `
+    ACUAN UTAMA: Gunakan file PDF yang dilampirkan sebagai kisi-kisi acuan untuk membuat soal.
+    Ekstrak indikator, materi, dan tujuan pembelajaran dari PDF tersebut.
+    `;
+  }
+
+  prompt += `
     Jumlah Soal:
     - Pilihan Ganda (PG): ${data.jumlahPG}
     - Isian: ${data.jumlahIsian}
@@ -29,7 +41,7 @@ export async function generateSoalAndKisi(data: AppData): Promise<GeneratedConte
     - L3 (C5, C6): ${data.persenL3}%
     
     Instruksi Khusus:
-    1. Indikator soal harus mengacu pada Tujuan Pembelajaran (TP).
+    1. Indikator soal harus mengacu pada Tujuan Pembelajaran (TP) atau kisi-kisi yang diberikan.
     2. Level Kognitif harus sesuai dengan persentase yang diminta.
     3. Untuk setiap soal Pilihan Ganda (PG), WAJIB sertakan 4 opsi jawaban (a, b, c, d).
     4. JANGAN sertakan huruf alfabet (a, b, c, d) di dalam teks opsi jawaban, karena sistem akan menambahkannya secara otomatis. Contoh: cukup tulis "Matahari" bukan "a. Matahari".
@@ -39,9 +51,22 @@ export async function generateSoalAndKisi(data: AppData): Promise<GeneratedConte
     8. Bahasa yang digunakan adalah Bahasa Indonesia yang baik dan benar sesuai Ejaan Bahasa Indonesia.
   `;
 
+  const contents: any[] = [];
+  
+  if (data.inputMethod === 'pdf' && data.pdfData) {
+    contents.push({
+      inlineData: {
+        mimeType: "application/pdf",
+        data: data.pdfData
+      }
+    });
+  }
+  
+  contents.push({ text: prompt });
+
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
-    contents: prompt,
+    contents: contents,
     config: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -103,4 +128,62 @@ export async function generateSoalAndKisi(data: AppData): Promise<GeneratedConte
   });
 
   return JSON.parse(response.text || "{}") as GeneratedContent;
+}
+
+export interface PdfAnalysis {
+  jumlahPG: number;
+  jumlahIsian: number;
+  jumlahUraian: number;
+  persenL1: number;
+  persenL2: number;
+  persenL3: number;
+}
+
+export async function analyzePdfKisiKisi(pdfBase64: string): Promise<PdfAnalysis> {
+  const prompt = `
+    Analisa file PDF kisi-kisi ini. 
+    Hitung jumlah soal untuk setiap bentuk (Pilihan Ganda/PG, Isian, Uraian) dan persentase level kognitif (L1, L2, L3) yang ada di dalam kisi-kisi tersebut.
+    
+    Format output harus JSON:
+    {
+      "jumlahPG": number,
+      "jumlahIsian": number,
+      "jumlahUraian": number,
+      "persenL1": number,
+      "persenL2": number,
+      "persenL3": number
+    }
+    
+    Pastikan total persentase L1+L2+L3 adalah 100. Jika tidak disebutkan secara eksplisit, lakukan estimasi terbaik berdasarkan indikator soal.
+  `;
+
+  const response = await ai.models.generateContent({
+    model: "gemini-3-flash-preview",
+    contents: [
+      {
+        inlineData: {
+          mimeType: "application/pdf",
+          data: pdfBase64
+        }
+      },
+      { text: prompt }
+    ],
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          jumlahPG: { type: Type.INTEGER },
+          jumlahIsian: { type: Type.INTEGER },
+          jumlahUraian: { type: Type.INTEGER },
+          persenL1: { type: Type.INTEGER },
+          persenL2: { type: Type.INTEGER },
+          persenL3: { type: Type.INTEGER }
+        },
+        required: ["jumlahPG", "jumlahIsian", "jumlahUraian", "persenL1", "persenL2", "persenL3"]
+      }
+    }
+  });
+
+  return JSON.parse(response.text || "{}") as PdfAnalysis;
 }
