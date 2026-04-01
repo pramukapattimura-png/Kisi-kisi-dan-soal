@@ -46,11 +46,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Set favicon
-    const link = document.querySelector("link[rel~='icon']") || document.createElement('link');
-    (link as any).rel = 'icon';
-    (link as any).href = 'https://i.imgur.com/gUuF59Z.png';
-    document.getElementsByTagName('head')[0].appendChild(link);
+    document.title = 'Kisi dan Soal generator';
   }, []);
 
   const handleDataChange = (newData: Partial<AppData>) => {

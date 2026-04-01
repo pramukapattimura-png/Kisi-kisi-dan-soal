@@ -1,5 +1,5 @@
 {
-  "name": "Generator Soal MI",
+  "name": "Kisi dan Soal generator",
   "description": "Aplikasi generator kisi-kisi dan soal untuk jenjang Madrasah Ibtidaiyah (MI) dengan integrasi AI.",
   "requestFramePermissions": []
 }
