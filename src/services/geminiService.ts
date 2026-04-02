@@ -3,7 +3,14 @@ import { AppData, GeneratedContent } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
+function checkApiKey() {
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error("API_KEY_MISSING: Gemini API Key tidak ditemukan. Jika Anda menggunakan Vercel, pastikan Anda telah menambahkan GEMINI_API_KEY di Environment Variables.");
+  }
+}
+
 export async function generateSoalAndKisi(data: AppData): Promise<GeneratedContent> {
+  checkApiKey();
   let prompt = `
     Anda adalah seorang pakar pendidikan Madrasah Ibtidaiyah (MI) di Indonesia.
     Buatkan Kisi-kisi, Soal, dan Kunci Jawaban berdasarkan data berikut:
@@ -148,6 +155,7 @@ export interface PdfAnalysis {
 }
 
 export async function analyzePdfKisiKisi(pdfBase64: string): Promise<PdfAnalysis> {
+  checkApiKey();
   const prompt = `
     Tugas Anda adalah mengekstrak data statistik DAN tabel kisi-kisi dari file PDF kisi-kisi soal Madrasah/Sekolah.
     Analisa seluruh halaman PDF dan cari informasi berikut:

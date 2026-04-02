@@ -60,9 +60,13 @@ export default function App() {
       const content = await generateSoalAndKisi(data);
       setGeneratedContent(content);
       setStep(3);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError('Gagal menghasilkan soal. Silakan periksa koneksi internet atau coba lagi nanti.');
+      if (err.message?.includes('API_KEY_MISSING')) {
+        setError('API Key belum diatur di Vercel. Silakan tambahkan GEMINI_API_KEY di Environment Variables proyek Vercel Anda.');
+      } else {
+        setError('Gagal menghasilkan soal. Silakan periksa koneksi internet atau coba lagi nanti.');
+      }
     } finally {
       setIsGenerating(false);
     }

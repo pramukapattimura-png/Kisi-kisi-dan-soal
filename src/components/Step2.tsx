@@ -76,9 +76,13 @@ export const Step2: React.FC<Step2Props> = ({ data, onChange, onPrev, onGenerate
             persenL3: analysis.persenL3,
             kisiKisiRows: analysis.rows
           });
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error analyzing PDF:', error);
-          setAnalysisError('Terjadi kesalahan saat menganalisa PDF. Silakan isi detail soal secara manual.');
+          if (error.message?.includes('API_KEY_MISSING')) {
+            setAnalysisError('API Key belum diatur di Vercel. Silakan tambahkan GEMINI_API_KEY di Environment Variables proyek Vercel Anda.');
+          } else {
+            setAnalysisError('Terjadi kesalahan saat menganalisa PDF. Silakan isi detail soal secara manual.');
+          }
         } finally {
           setIsAnalyzing(false);
         }
