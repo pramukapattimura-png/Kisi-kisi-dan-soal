@@ -42,6 +42,10 @@ export const Step2: React.FC<Step2Props> = ({ data, onChange, onPrev, onGenerate
           // Analyze PDF
           const analysis = await analyzePdfKisiKisi(base64);
           
+          if (analysis.jumlahPG === 0 && analysis.jumlahIsian === 0 && analysis.jumlahUraian === 0) {
+            setAnalysisError('AI tidak menemukan detail jumlah soal secara otomatis. Silakan isi jumlah soal secara manual di bawah.');
+          }
+
           onChange({ 
             pdfData: base64,
             jumlahPG: analysis.jumlahPG,
@@ -53,7 +57,7 @@ export const Step2: React.FC<Step2Props> = ({ data, onChange, onPrev, onGenerate
           });
         } catch (error) {
           console.error('Error analyzing PDF:', error);
-          setAnalysisError('Gagal menganalisa file PDF. Pastikan file tidak rusak.');
+          setAnalysisError('Terjadi kesalahan saat menganalisa PDF. Silakan isi detail soal secara manual.');
         } finally {
           setIsAnalyzing(false);
         }

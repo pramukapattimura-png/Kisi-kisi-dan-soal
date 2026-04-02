@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, ThinkingLevel } from "@google/genai";
 import { AppData, GeneratedContent } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
@@ -144,10 +144,22 @@ export interface PdfAnalysis {
 
 export async function analyzePdfKisiKisi(pdfBase64: string): Promise<PdfAnalysis> {
   const prompt = `
-    Analisa file PDF kisi-kisi ini. 
-    Hitung jumlah soal untuk setiap bentuk (Pilihan Ganda/PG, Isian, Uraian) dan persentase level kognitif (L1, L2, L3) yang ada di dalam kisi-kisi tersebut.
-    
-    Format output harus JSON:
+    Tugas Anda adalah menganalisa file PDF kisi-kisi soal Madrasah.
+    Cari informasi berikut dari tabel atau teks di dalam PDF:
+    1. Jumlah soal Pilihan Ganda (PG)
+    2. Jumlah soal Isian
+    3. Jumlah soal Uraian
+    4. Persentase Level Kognitif L1 (Pengetahuan/Pemahaman)
+    5. Persentase Level Kognitif L2 (Aplikasi)
+    6. Persentase Level Kognitif L3 (Penalaran/HOTS)
+
+    Aturan:
+    - Jika jumlah soal tidak tertulis eksplisit, hitunglah jumlah baris indikator soal yang ada.
+    - Jika persentase level kognitif tidak disebutkan, lakukan estimasi berdasarkan kata kerja operasional (KKO) pada indikator soal.
+    - Pastikan total persenL1 + persenL2 + persenL3 = 100.
+    - Jika ada data yang benar-benar tidak ditemukan, berikan nilai 0 untuk jumlah soal dan distribusi default (L1:30, L2:50, L3:20) untuk persentase.
+
+    Format output WAJIB JSON murni:
     {
       "jumlahPG": number,
       "jumlahIsian": number,
@@ -156,37 +168,59 @@ export async function analyzePdfKisiKisi(pdfBase64: string): Promise<PdfAnalysis
       "persenL2": number,
       "persenL3": number
     }
-    
-    Pastikan total persentase L1+L2+L3 adalah 100. Jika tidak disebutkan secara eksplisit, lakukan estimasi terbaik berdasarkan indikator soal.
   `;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: [
-      {
-        inlineData: {
-          mimeType: "application/pdf",
-          data: pdfBase64
-        }
-      },
-      { text: prompt }
-    ],
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          jumlahPG: { type: Type.INTEGER },
-          jumlahIsian: { type: Type.INTEGER },
-          jumlahUraian: { type: Type.INTEGER },
-          persenL1: { type: Type.INTEGER },
-          persenL2: { type: Type.INTEGER },
-          persenL3: { type: Type.INTEGER }
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: [
+        {
+          inlineData: {
+            mimeType: "application/pdf",
+            data: pdfBase64
+          }
         },
-        required: ["jumlahPG", "jumlahIsian", "jumlahUraian", "persenL1", "persenL2", "persenL3"]
+        { text: prompt }
+      ],
+      config: {
+        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            jumlahPG: { type: Type.INTEGER },
+            jumlahIsian: { type: Type.INTEGER },
+            jumlahUraian: { type: Type.INTEGER },
+            persenL1: { type: Type.INTEGER },
+            persenL2: { type: Type.INTEGER },
+            persenL3: { type: Type.INTEGER }
+          },
+          required: ["jumlahPG", "jumlahIsian", "jumlahUraian", "persenL1", "persenL2", "persenL3"]
+        }
       }
-    }
-  });
+    });
 
-  return JSON.parse(response.text || "{}") as PdfAnalysis;
+    const result = JSON.parse(response.text || "{}");
+    
+    // Ensure all fields have default values if missing
+    return {
+      jumlahPG: result.jumlahPG ?? 0,
+      jumlahIsian: result.jumlahIsian ?? 0,
+      jumlahUraian: result.jumlahUraian ?? 0,
+      persenL1: result.persenL1 ?? 30,
+      persenL2: result.persenL2 ?? 50,
+      persenL3: result.persenL3 ?? 20
+    };
+  } catch (error) {
+    console.error("Gemini Analysis Error:", error);
+    // Return default values on error to allow manual correction
+    return {
+      jumlahPG: 0,
+      jumlahIsian: 0,
+      jumlahUraian: 0,
+      persenL1: 30,
+      persenL2: 50,
+      persenL3: 20
+    };
+  }
 }
