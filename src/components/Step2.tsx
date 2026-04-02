@@ -13,6 +13,7 @@ interface Step2Props {
 export const Step2: React.FC<Step2Props> = ({ data, onChange, onPrev, onGenerate }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [analysisSuccess, setAnalysisSuccess] = useState(false);
   const [isEditingAnalysis, setIsEditingAnalysis] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -33,6 +34,7 @@ export const Step2: React.FC<Step2Props> = ({ data, onChange, onPrev, onGenerate
     if (file) {
       setIsAnalyzing(true);
       setAnalysisError(null);
+      setAnalysisSuccess(false);
       const reader = new FileReader();
       reader.onloadend = async () => {
         try {
@@ -44,6 +46,8 @@ export const Step2: React.FC<Step2Props> = ({ data, onChange, onPrev, onGenerate
           
           if (analysis.jumlahPG === 0 && analysis.jumlahIsian === 0 && analysis.jumlahUraian === 0) {
             setAnalysisError('AI tidak menemukan detail jumlah soal secara otomatis. Silakan isi jumlah soal secara manual di bawah.');
+          } else {
+            setAnalysisSuccess(true);
           }
 
           onChange({ 
@@ -161,7 +165,17 @@ export const Step2: React.FC<Step2Props> = ({ data, onChange, onPrev, onGenerate
               </div>
             )}
 
-            {analysisError && (
+            {analysisSuccess && !analysisError && (
+          <div className="bg-[#E8F5E9] border border-[#C8E6C9] p-4 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+            <CheckCircle2 className="w-5 h-5 text-[#2E7D32] flex-shrink-0 mt-0.5" />
+            <div>
+              <h4 className="text-[#1B5E20] font-bold text-sm">Analisa Berhasil!</h4>
+              <p className="text-[#2E7D32] text-xs">AI telah berhasil mengekstrak detail soal dari PDF Anda. Silakan tinjau kembali angka-angka di bawah ini.</p>
+            </div>
+          </div>
+        )}
+
+        {analysisError && (
               <div className="space-y-4">
                 <div className="flex items-center p-4 bg-amber-50 rounded-xl border border-amber-100 text-amber-700">
                   <AlertCircle className="w-5 h-5 mr-2" />

@@ -144,20 +144,21 @@ export interface PdfAnalysis {
 
 export async function analyzePdfKisiKisi(pdfBase64: string): Promise<PdfAnalysis> {
   const prompt = `
-    Tugas Anda adalah menganalisa file PDF kisi-kisi soal Madrasah.
-    Cari informasi berikut dari tabel atau teks di dalam PDF:
+    Tugas Anda adalah mengekstrak data statistik dari file PDF kisi-kisi soal Madrasah/Sekolah.
+    Analisa seluruh halaman PDF dan cari informasi berikut:
     1. Jumlah soal Pilihan Ganda (PG)
-    2. Jumlah soal Isian
-    3. Jumlah soal Uraian
-    4. Persentase Level Kognitif L1 (Pengetahuan/Pemahaman)
-    5. Persentase Level Kognitif L2 (Aplikasi)
-    6. Persentase Level Kognitif L3 (Penalaran/HOTS)
+    2. Jumlah soal Isian (Isian Singkat)
+    3. Jumlah soal Uraian (Essay)
+    4. Persentase Level Kognitif L1 (Pengetahuan/Pemahaman - C1, C2)
+    5. Persentase Level Kognitif L2 (Aplikasi - C3, C4)
+    6. Persentase Level Kognitif L3 (Penalaran/HOTS - C5, C6)
 
-    Aturan:
-    - Jika jumlah soal tidak tertulis eksplisit, hitunglah jumlah baris indikator soal yang ada.
-    - Jika persentase level kognitif tidak disebutkan, lakukan estimasi berdasarkan kata kerja operasional (KKO) pada indikator soal.
+    Aturan Ekstraksi:
+    - Cari tabel yang memiliki kolom "Bentuk Soal", "No Soal", atau "Level Kognitif".
+    - Jika jumlah soal tidak tertulis secara eksplisit sebagai total, hitunglah jumlah kemunculan nomor soal untuk setiap kategori (PG, Isian, Uraian).
+    - Jika persentase level kognitif tidak disebutkan, lakukan estimasi berdasarkan indikator soal atau kata kerja operasional yang digunakan.
     - Pastikan total persenL1 + persenL2 + persenL3 = 100.
-    - Jika ada data yang benar-benar tidak ditemukan, berikan nilai 0 untuk jumlah soal dan distribusi default (L1:30, L2:50, L3:20) untuk persentase.
+    - Jika data benar-benar tidak ditemukan, gunakan nilai 0 untuk jumlah soal dan distribusi default (L1:30, L2:50, L3:20).
 
     Format output WAJIB JSON murni:
     {
@@ -172,7 +173,7 @@ export async function analyzePdfKisiKisi(pdfBase64: string): Promise<PdfAnalysis
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3.1-pro-preview",
       contents: [
         {
           inlineData: {
@@ -183,7 +184,6 @@ export async function analyzePdfKisiKisi(pdfBase64: string): Promise<PdfAnalysis
         { text: prompt }
       ],
       config: {
-        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -200,20 +200,20 @@ export async function analyzePdfKisiKisi(pdfBase64: string): Promise<PdfAnalysis
       }
     });
 
-    const result = JSON.parse(response.text || "{}");
+    const text = response.text;
+    console.log("PDF Analysis Raw Output:", text);
+    const result = JSON.parse(text || "{}");
     
-    // Ensure all fields have default values if missing
     return {
-      jumlahPG: result.jumlahPG ?? 0,
-      jumlahIsian: result.jumlahIsian ?? 0,
-      jumlahUraian: result.jumlahUraian ?? 0,
-      persenL1: result.persenL1 ?? 30,
-      persenL2: result.persenL2 ?? 50,
-      persenL3: result.persenL3 ?? 20
+      jumlahPG: typeof result.jumlahPG === 'number' ? result.jumlahPG : 0,
+      jumlahIsian: typeof result.jumlahIsian === 'number' ? result.jumlahIsian : 0,
+      jumlahUraian: typeof result.jumlahUraian === 'number' ? result.jumlahUraian : 0,
+      persenL1: typeof result.persenL1 === 'number' ? result.persenL1 : 30,
+      persenL2: typeof result.persenL2 === 'number' ? result.persenL2 : 50,
+      persenL3: typeof result.persenL3 === 'number' ? result.persenL3 : 20
     };
   } catch (error) {
     console.error("Gemini Analysis Error:", error);
-    // Return default values on error to allow manual correction
     return {
       jumlahPG: 0,
       jumlahIsian: 0,
