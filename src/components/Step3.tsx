@@ -249,7 +249,6 @@ export const Step3: React.FC<Step3Props> = ({ data, content, onReset, onEdit }) 
             .option-row { margin-bottom: 2pt; }
             .w-full { width: 100%; }
             .bg-[#E0F2F1] { background-color: #E0F2F1; }
-            .no-print { display: none !important; }
             section { page-break-after: always; }
           </style>
         </head>

@@ -23,7 +23,6 @@ export interface AppData {
   persenL1: number;
   persenL2: number;
   persenL3: number;
-  kisiKisiRows?: KisiKisiRow[]; // Extracted from PDF
 }
 
 export interface GeneratedContent {
