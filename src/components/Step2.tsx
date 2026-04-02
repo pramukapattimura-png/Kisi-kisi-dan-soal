@@ -13,6 +13,7 @@ interface Step2Props {
 export const Step2: React.FC<Step2Props> = ({ data, onChange, onPrev, onGenerate }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [analysisSuccess, setAnalysisSuccess] = useState(false);
   const [isEditingAnalysis, setIsEditingAnalysis] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -31,8 +32,16 @@ export const Step2: React.FC<Step2Props> = ({ data, onChange, onPrev, onGenerate
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setIsAnalyzing(true);
       setAnalysisError(null);
+      setAnalysisSuccess(false);
+
+      // Check file size (Vercel limit is 4.5MB for body, base64 adds overhead)
+      if (file.size > 3 * 1024 * 1024) {
+        setAnalysisError('Ukuran file terlalu besar (Maksimal 3MB). Silakan kecilkan ukuran PDF Anda atau gunakan metode input manual.');
+        return;
+      }
+
+      setIsAnalyzing(true);
       const reader = new FileReader();
       reader.onloadend = async () => {
         try {
@@ -42,18 +51,45 @@ export const Step2: React.FC<Step2Props> = ({ data, onChange, onPrev, onGenerate
           // Analyze PDF
           const analysis = await analyzePdfKisiKisi(base64);
           
+          let pg = analysis.jumlahPG;
+          let isian = analysis.jumlahIsian;
+          let uraian = analysis.jumlahUraian;
+
+          // Fallback: If AI couldn't find explicit counts but found rows, use row count
+          if (pg === 0 && isian === 0 && uraian === 0 && analysis.rows && analysis.rows.length > 0) {
+            // Default to PG if unknown, or try to count from rows
+            analysis.rows.forEach(row => {
+              const bentuk = (row.bentukSoal || '').toLowerCase();
+              if (bentuk.includes('pg') || bentuk.includes('ganda')) pg++;
+              else if (bentuk.includes('isian')) isian++;
+              else if (bentuk.includes('uraian') || bentuk.includes('essay')) uraian++;
+              else pg++; // Default fallback
+            });
+          }
+
+          if (pg === 0 && isian === 0 && uraian === 0) {
+            setAnalysisError('AI tidak menemukan detail jumlah soal secara otomatis. Silakan isi jumlah soal secara manual di bawah.');
+          } else {
+            setAnalysisSuccess(true);
+          }
+
           onChange({ 
             pdfData: base64,
-            jumlahPG: analysis.jumlahPG,
-            jumlahIsian: analysis.jumlahIsian,
-            jumlahUraian: analysis.jumlahUraian,
+            jumlahPG: pg,
+            jumlahIsian: isian,
+            jumlahUraian: uraian,
             persenL1: analysis.persenL1,
             persenL2: analysis.persenL2,
-            persenL3: analysis.persenL3
+            persenL3: analysis.persenL3,
+            kisiKisiRows: analysis.rows
           });
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error analyzing PDF:', error);
-          setAnalysisError('Gagal menganalisa file PDF. Pastikan file tidak rusak.');
+          if (error.message?.includes('API_KEY_MISSING')) {
+            setAnalysisError('API Key belum diatur di Vercel. Silakan tambahkan GEMINI_API_KEY di Environment Variables proyek Vercel Anda.');
+          } else {
+            setAnalysisError('Terjadi kesalahan saat menganalisa PDF. Silakan isi detail soal secara manual.');
+          }
         } finally {
           setIsAnalyzing(false);
         }
@@ -157,7 +193,17 @@ export const Step2: React.FC<Step2Props> = ({ data, onChange, onPrev, onGenerate
               </div>
             )}
 
-            {analysisError && (
+            {analysisSuccess && !analysisError && (
+          <div className="bg-[#E8F5E9] border border-[#C8E6C9] p-4 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+            <CheckCircle2 className="w-5 h-5 text-[#2E7D32] flex-shrink-0 mt-0.5" />
+            <div>
+              <h4 className="text-[#1B5E20] font-bold text-sm">Analisa Berhasil!</h4>
+              <p className="text-[#2E7D32] text-xs">AI telah berhasil mengekstrak detail soal dari PDF Anda. Silakan tinjau kembali angka-angka di bawah ini.</p>
+            </div>
+          </div>
+        )}
+
+        {analysisError && (
               <div className="space-y-4">
                 <div className="flex items-center p-4 bg-amber-50 rounded-xl border border-amber-100 text-amber-700">
                   <AlertCircle className="w-5 h-5 mr-2" />
@@ -277,6 +323,51 @@ export const Step2: React.FC<Step2Props> = ({ data, onChange, onPrev, onGenerate
                     </div>
                   </div>
                 </div>
+
+                {/* Table Preview Section */}
+                {data.kisiKisiRows && data.kisiKisiRows.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center text-[#00796B] font-bold text-sm">
+                        <CheckCircle2 className="w-4 h-4 mr-2" />
+                        Detail Kisi-kisi Terdeteksi:
+                      </div>
+                      <span className="text-[10px] text-gray-400 italic">*Data ini akan digunakan sebagai acuan pembuatan soal</span>
+                    </div>
+                    <div className="overflow-x-auto rounded-xl border border-[#B2DFDB] shadow-sm">
+                      <table className="w-full text-[10px] border-collapse">
+                        <thead>
+                          <tr className="bg-[#E0F2F1] text-[#00796B]">
+                            <th className="p-2 border-b border-[#B2DFDB] text-center w-8">No</th>
+                            <th className="p-2 border-b border-[#B2DFDB] text-left">Materi Esensial</th>
+                            <th className="p-2 border-b border-[#B2DFDB] text-left">Indikator</th>
+                            <th className="p-2 border-b border-[#B2DFDB] text-center w-16">Level</th>
+                            <th className="p-2 border-b border-[#B2DFDB] text-center w-16">Bentuk</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#B2DFDB]">
+                          {data.kisiKisiRows.map((row, idx) => (
+                            <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                              <td className="p-2 text-center text-gray-500">{row.no}</td>
+                              <td className="p-2 font-medium text-gray-700">{row.materiEsensial}</td>
+                              <td className="p-2 text-gray-600 leading-tight">{row.indikator}</td>
+                              <td className="p-2 text-center">
+                                <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                                  row.levelKognitif.includes('L1') ? 'bg-blue-50 text-blue-600' :
+                                  row.levelKognitif.includes('L2') ? 'bg-amber-50 text-amber-600' :
+                                  'bg-red-50 text-red-600'
+                                }`}>
+                                  {row.levelKognitif}
+                                </span>
+                              </td>
+                              <td className="p-2 text-center text-gray-500">{row.bentukSoal}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
 
                 {/* Edit Toggle Question */}
                 <div className="flex flex-col md:flex-row items-center justify-between p-4 bg-white rounded-xl border border-[#B2DFDB] gap-4">

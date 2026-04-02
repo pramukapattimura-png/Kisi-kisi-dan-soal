@@ -400,37 +400,37 @@ export const Step3: React.FC<Step3Props> = ({ data, content, onReset, onEdit }) 
             <p className="text-sm">Tahun Pelajaran {data.tahunPelajaran}</p>
           </div>
 
-          <table className="w-full text-sm border-2 border-black mb-8">
+          <table className="w-full text-sm border-none mb-8">
             <tbody>
               <tr>
-                <td className="p-2 border-r border-black w-1/2">
-                  <table className="w-full">
+                <td className="p-0 w-1/2 align-top border-none">
+                  <table className="w-full border-none">
                     <tbody>
                       <tr>
-                        <td className="w-32" style={{ width: '100pt' }}>Mata Pelajaran</td>
-                        <td className="w-4" style={{ width: '10pt' }}>:</td>
-                        <td>{data.mapel}</td>
+                        <td className="py-1 w-32 border-none" style={{ width: '100pt' }}>Mata Pelajaran</td>
+                        <td className="py-1 w-4 border-none" style={{ width: '10pt' }}>:</td>
+                        <td className="py-1 border-none font-medium">{data.mapel}</td>
                       </tr>
                       <tr>
-                        <td style={{ width: '100pt' }}>Kelas</td>
-                        <td style={{ width: '10pt' }}>:</td>
-                        <td>{data.kelas}</td>
+                        <td className="py-1 border-none" style={{ width: '100pt' }}>Kelas</td>
+                        <td className="py-1 border-none" style={{ width: '10pt' }}>:</td>
+                        <td className="py-1 border-none font-medium">{data.kelas}</td>
                       </tr>
                     </tbody>
                   </table>
                 </td>
-                <td className="p-2 w-1/2">
-                  <table className="w-full">
+                <td className="p-0 w-1/2 align-top border-none">
+                  <table className="w-full border-none">
                     <tbody>
                       <tr>
-                        <td className="w-32" style={{ width: '80pt' }}>Nama</td>
-                        <td className="w-4" style={{ width: '10pt' }}>:</td>
-                        <td className="border-b border-dotted border-black">............................</td>
+                        <td className="py-1 w-32 border-none" style={{ width: '80pt' }}>Nama</td>
+                        <td className="py-1 w-4 border-none" style={{ width: '10pt' }}>:</td>
+                        <td className="py-1 border-none border-b border-dotted border-black">............................</td>
                       </tr>
                       <tr>
-                        <td style={{ width: '80pt' }}>No. Absen</td>
-                        <td style={{ width: '10pt' }}>:</td>
-                        <td className="border-b border-dotted border-black">............................</td>
+                        <td className="py-1 border-none" style={{ width: '80pt' }}>No. Absen</td>
+                        <td className="py-1 w-4 border-none" style={{ width: '10pt' }}>:</td>
+                        <td className="py-1 border-none border-b border-dotted border-black">............................</td>
                       </tr>
                     </tbody>
                   </table>
