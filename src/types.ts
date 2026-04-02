@@ -23,6 +23,7 @@ export interface AppData {
   persenL1: number;
   persenL2: number;
   persenL3: number;
+  kisiKisiRows?: KisiKisiRow[]; // Extracted from PDF
 }
 
 export interface GeneratedContent {
@@ -40,7 +41,6 @@ export interface KisiKisiRow {
   levelKognitif: string;
   noSoal: string;
   bentukSoal: string;
-  insersiKBC: string;
 }
 
 export interface SoalItem {
@@ -49,7 +49,6 @@ export interface SoalItem {
   pertanyaan: string;
   opsi?: string[]; // For PG
   promptGambar?: string;
-  insersiKBC: string;
 }
 
 export interface KunciJawabanItem {
