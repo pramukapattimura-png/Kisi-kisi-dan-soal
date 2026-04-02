@@ -30,6 +30,7 @@ async function startServer() {
       if (!pdfBase64) return res.status(400).json({ error: "PDF data is required" });
 
       const ai = getAi();
+      console.log("Starting PDF analysis on server...");
       const prompt = `
         Tugas Anda adalah mengekstrak data statistik DAN tabel kisi-kisi dari file PDF kisi-kisi soal Madrasah/Sekolah.
         Analisa seluruh halaman PDF dan cari informasi berikut:
@@ -85,7 +86,7 @@ async function startServer() {
       `;
 
       const response = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
+        model: "gemini-3-flash-preview",
         contents: [
           {
             inlineData: {
@@ -129,6 +130,7 @@ async function startServer() {
         }
       });
 
+      console.log("PDF analysis completed successfully.");
       res.json(JSON.parse(response.text || "{}"));
     } catch (error: any) {
       console.error("Server PDF Analysis Error:", error);
