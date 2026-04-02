@@ -40,6 +40,7 @@ export interface KisiKisiRow {
   levelKognitif: string;
   noSoal: string;
   bentukSoal: string;
+  insersiKBC: string;
 }
 
 export interface SoalItem {
@@ -48,6 +49,7 @@ export interface SoalItem {
   pertanyaan: string;
   opsi?: string[]; // For PG
   promptGambar?: string;
+  insersiKBC: string;
 }
 
 export interface KunciJawabanItem {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { AppData, GeneratedContent } from '../types';
-import { Download, FileText, CheckCircle, Table, Printer } from 'lucide-react';
+import { Download, FileText, CheckCircle, Table, Printer, Heart } from 'lucide-react';
 
 interface Step3Props {
   data: AppData;
@@ -249,6 +249,7 @@ export const Step3: React.FC<Step3Props> = ({ data, content, onReset, onEdit }) 
             .option-row { margin-bottom: 2pt; }
             .w-full { width: 100%; }
             .bg-[#E0F2F1] { background-color: #E0F2F1; }
+            .no-print { display: none !important; }
             section { page-break-after: always; }
           </style>
         </head>
@@ -346,6 +347,7 @@ export const Step3: React.FC<Step3Props> = ({ data, content, onReset, onEdit }) 
                   <th className="border border-black p-2 text-center w-20">LEVEL KOGNITIF</th>
                   <th className="border border-black p-2 text-center w-12">NO SOAL</th>
                   <th className="border border-black p-2 text-center w-20">BENTUK SOAL</th>
+                  <th className="border border-black p-2 text-center w-40">INSERSI KURIKULUM BERBASIS CINTA (KBC)</th>
                 </tr>
               </thead>
               <tbody>
@@ -359,6 +361,12 @@ export const Step3: React.FC<Step3Props> = ({ data, content, onReset, onEdit }) 
                     <td className="border border-black p-2 text-center">{row.levelKognitif}</td>
                     <td className="border border-black p-2 text-center">{row.noSoal}</td>
                     <td className="border border-black p-2 text-center">{row.bentukSoal}</td>
+                    <td className="border border-black p-2 italic text-[#D32F2F] text-[10px]">
+                      <div className="flex items-start gap-1">
+                        <Heart className="w-3 h-3 mt-0.5 flex-shrink-0 no-print" />
+                        <span>{row.insersiKBC}</span>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -457,6 +465,15 @@ export const Step3: React.FC<Step3Props> = ({ data, content, onReset, onEdit }) 
                           </div>
                         ))}
                       </div>
+                      {s.insersiKBC && (
+                        <div className="mt-2 p-2 bg-[#FDF2F2] rounded border border-red-100 text-[10px] italic text-red-800">
+                          <div className="flex items-center gap-1 mb-1 font-bold not-italic">
+                            <Heart className="w-3 h-3 no-print" />
+                            <span>Insersi Kurikulum Berbasis Cinta:</span>
+                          </div>
+                          {s.insersiKBC}
+                        </div>
+                      )}
                     </div>
                     <div className="clear"></div>
                   </div>
@@ -473,6 +490,15 @@ export const Step3: React.FC<Step3Props> = ({ data, content, onReset, onEdit }) 
                     <div className="question-num font-bold min-w-[25px]">{s.no}.</div>
                     <div className="question-content flex-1 text-justify">
                       {s.pertanyaan}
+                      {s.insersiKBC && (
+                        <div className="mt-2 p-2 bg-[#FDF2F2] rounded border border-red-100 text-[10px] italic text-red-800">
+                          <div className="flex items-center gap-1 mb-1 font-bold not-italic">
+                            <Heart className="w-3 h-3 no-print" />
+                            <span>Insersi Kurikulum Berbasis Cinta:</span>
+                          </div>
+                          {s.insersiKBC}
+                        </div>
+                      )}
                     </div>
                     <div className="clear"></div>
                   </div>
@@ -489,6 +515,15 @@ export const Step3: React.FC<Step3Props> = ({ data, content, onReset, onEdit }) 
                     <div className="question-num font-bold min-w-[25px]">{s.no}.</div>
                     <div className="question-content flex-1 text-justify">
                       {s.pertanyaan}
+                      {s.insersiKBC && (
+                        <div className="mt-2 p-2 bg-[#FDF2F2] rounded border border-red-100 text-[10px] italic text-red-800">
+                          <div className="flex items-center gap-1 mb-1 font-bold not-italic">
+                            <Heart className="w-3 h-3 no-print" />
+                            <span>Insersi Kurikulum Berbasis Cinta:</span>
+                          </div>
+                          {s.insersiKBC}
+                        </div>
+                      )}
                     </div>
                     <div className="clear"></div>
                   </div>

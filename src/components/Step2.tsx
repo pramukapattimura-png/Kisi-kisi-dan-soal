@@ -26,7 +26,7 @@ export const Step2: React.FC<Step2Props> = ({ data, onChange, onPrev, onGenerate
 
   const isComplete = data.inputMethod === 'manual' 
     ? (data.cp && data.tp && data.materiEsensial)
-    : (!!data.pdfData);
+    : (!!data.pdfData && (data.jumlahPG > 0 || data.jumlahIsian > 0 || data.jumlahUraian > 0));
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -158,9 +158,87 @@ export const Step2: React.FC<Step2Props> = ({ data, onChange, onPrev, onGenerate
             )}
 
             {analysisError && (
-              <div className="flex items-center p-4 bg-red-50 rounded-xl border border-red-100 text-red-600">
-                <AlertCircle className="w-5 h-5 mr-2" />
-                <span className="text-sm font-medium">{analysisError}</span>
+              <div className="space-y-4">
+                <div className="flex items-center p-4 bg-amber-50 rounded-xl border border-amber-100 text-amber-700">
+                  <AlertCircle className="w-5 h-5 mr-2" />
+                  <div className="text-sm">
+                    <p className="font-bold">Analisa Otomatis Gagal</p>
+                    <p>AI kesulitan membaca detail soal dari PDF ini. Jangan khawatir, Anda tetap bisa melanjutkan dengan mengisi detail soal secara manual di bawah.</p>
+                  </div>
+                </div>
+                
+                <div className="p-6 bg-white rounded-xl border-2 border-[#00796B] space-y-4 shadow-sm">
+                  <div className="flex items-center text-[#00796B] font-bold text-sm mb-2">
+                    <Edit3 className="w-4 h-4 mr-2" />
+                    Isi Detail Soal Secara Manual:
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase">Jumlah PG</label>
+                      <input
+                        type="number"
+                        name="jumlahPG"
+                        value={data.jumlahPG}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-[#B2DFDB] focus:ring-2 focus:ring-[#00796B] outline-none transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase">Jumlah Isian</label>
+                      <input
+                        type="number"
+                        name="jumlahIsian"
+                        value={data.jumlahIsian}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-[#B2DFDB] focus:ring-2 focus:ring-[#00796B] outline-none transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase">Jumlah Uraian</label>
+                      <input
+                        type="number"
+                        name="jumlahUraian"
+                        value={data.jumlahUraian}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-[#B2DFDB] focus:ring-2 focus:ring-[#00796B] outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase">Level L1 (%)</label>
+                      <input
+                        type="number"
+                        name="persenL1"
+                        value={data.persenL1}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-[#B2DFDB] focus:ring-2 focus:ring-[#00796B] outline-none transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase">Level L2 (%)</label>
+                      <input
+                        type="number"
+                        name="persenL2"
+                        value={data.persenL2}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-[#B2DFDB] focus:ring-2 focus:ring-[#00796B] outline-none transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase">Level L3 (%)</label>
+                      <input
+                        type="number"
+                        name="persenL3"
+                        value={data.persenL3}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-[#B2DFDB] focus:ring-2 focus:ring-[#00796B] outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 

@@ -46,9 +46,10 @@ export async function generateSoalAndKisi(data: AppData): Promise<GeneratedConte
     3. Untuk setiap soal Pilihan Ganda (PG), WAJIB sertakan 4 opsi jawaban (a, b, c, d).
     4. JANGAN sertakan huruf alfabet (a, b, c, d) di dalam teks opsi jawaban, karena sistem akan menambahkannya secara otomatis. Contoh: cukup tulis "Matahari" bukan "a. Matahari".
     5. Kunci jawaban untuk soal PG harus berupa huruf (a, b, c, atau d).
-    6. Untuk setiap soal, sertakan prompt generate gambar jika diperlukan untuk memperjelas soal.
-    7. Format output harus JSON sesuai schema.
-    8. Bahasa yang digunakan adalah Bahasa Indonesia yang baik dan benar sesuai Ejaan Bahasa Indonesia.
+    6. INSERSI KURIKULUM BERBASIS CINTA: Setiap soal (PG, Isian, Uraian) dan indikator dalam kisi-kisi WAJIB diinsersi dengan nilai-nilai "Kurikulum Berbasis Cinta" (seperti kasih sayang, empati, karakter positif, dan nilai-nilai kemanusiaan yang relevan dengan materi). Tuliskan deskripsi singkat insersi ini pada field "insersiKBC".
+    7. Untuk setiap soal, sertakan prompt generate gambar jika diperlukan untuk memperjelas soal.
+    8. Format output harus JSON sesuai schema.
+    9. Bahasa yang digunakan adalah Bahasa Indonesia yang baik dan benar sesuai Ejaan Bahasa Indonesia.
   `;
 
   const contents: any[] = [];
@@ -85,8 +86,9 @@ export async function generateSoalAndKisi(data: AppData): Promise<GeneratedConte
                 levelKognitif: { type: Type.STRING },
                 noSoal: { type: Type.STRING },
                 bentukSoal: { type: Type.STRING },
+                insersiKBC: { type: Type.STRING, description: "Deskripsi insersi Kurikulum Berbasis Cinta pada indikator ini." },
               },
-              required: ["no", "fase", "cp", "materiEsensial", "indikator", "levelKognitif", "noSoal", "bentukSoal"],
+              required: ["no", "fase", "cp", "materiEsensial", "indikator", "levelKognitif", "noSoal", "bentukSoal", "insersiKBC"],
             },
           },
           soal: {
@@ -106,8 +108,9 @@ export async function generateSoalAndKisi(data: AppData): Promise<GeneratedConte
                   description: "Wajib diisi jika tipe adalah PG. Berisi 4 opsi jawaban.",
                 },
                 promptGambar: { type: Type.STRING },
+                insersiKBC: { type: Type.STRING, description: "Deskripsi insersi Kurikulum Berbasis Cinta pada soal ini." },
               },
-              required: ["no", "tipe", "pertanyaan"],
+              required: ["no", "tipe", "pertanyaan", "insersiKBC"],
             },
           },
           kunciJawaban: {
