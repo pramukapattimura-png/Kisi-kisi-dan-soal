@@ -166,34 +166,6 @@ export const Step1: React.FC<Step1Props> = ({ data, onChange, onNext }) => {
             />
           </div>
         </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-gray-700">Metode Input *</label>
-          <div className="grid grid-cols-2 gap-4">
-            <button
-              type="button"
-              onClick={() => onChange({ inputMethod: 'manual' })}
-              className={`px-4 py-3 rounded-lg border-2 font-bold transition-all ${
-                data.inputMethod === 'manual'
-                  ? 'border-[#00796B] bg-[#E0F2F1] text-[#00796B]'
-                  : 'border-gray-200 text-gray-400 hover:border-[#B2DFDB]'
-              }`}
-            >
-              Manual
-            </button>
-            <button
-              type="button"
-              onClick={() => onChange({ inputMethod: 'pdf' })}
-              className={`px-4 py-3 rounded-lg border-2 font-bold transition-all ${
-                data.inputMethod === 'pdf'
-                  ? 'border-[#00796B] bg-[#E0F2F1] text-[#00796B]'
-                  : 'border-gray-200 text-gray-400 hover:border-[#B2DFDB]'
-              }`}
-            >
-              File PDF
-            </button>
-          </div>
-        </div>
       </div>
 
       <div className="flex justify-end pt-4">

@@ -24,29 +24,11 @@ export default async function handler(req: any, res: any) {
       Fase: ${data.fase}
       Kelas: ${data.kelas}
       Tahun Pelajaran: ${data.tahunPelajaran}
-    `;
-
-    if (data.inputMethod === 'manual') {
-      prompt += `
+      
       Capaian Pembelajaran (CP): ${data.cp}
       Tujuan Pembelajaran (TP): ${data.tp}
       Materi Esensial: ${data.materiEsensial}
-      `;
-    } else {
-      prompt += `
-      ACUAN UTAMA: Gunakan file PDF yang dilampirkan sebagai kisi-kisi acuan untuk membuat soal.
-      Ekstrak indikator, materi, dan tujuan pembelajaran dari PDF tersebut.
-      `;
       
-      if (data.kisiKisiRows && data.kisiKisiRows.length > 0) {
-        prompt += `
-        DATA KISI-KISI TERDETEKSI (Gunakan data ini sebagai referensi utama):
-        ${JSON.stringify(data.kisiKisiRows, null, 2)}
-        `;
-      }
-    }
-
-    prompt += `
       Jumlah Soal:
       - Pilihan Ganda (PG): ${data.jumlahPG}
       - Isian: ${data.jumlahIsian}
@@ -58,7 +40,7 @@ export default async function handler(req: any, res: any) {
       - L3 (C5, C6): ${data.persenL3}%
       
       Instruksi Khusus:
-      1. Indikator soal harus mengacu pada Tujuan Pembelajaran (TP) atau kisi-kisi yang diberikan.
+      1. Indikator soal harus mengacu pada Tujuan Pembelajaran (TP) yang diberikan.
       2. Level Kognitif harus sesuai dengan persentase yang diminta.
       3. Untuk setiap soal Pilihan Ganda (PG), WAJIB sertakan 4 opsi jawaban (a, b, c, d).
       4. JANGAN sertakan huruf alfabet (a, b, c, d) di dalam teks opsi jawaban, karena sistem akan menambahkannya secara otomatis. Contoh: cukup tulis "Matahari" bukan "a. Matahari".
@@ -68,16 +50,7 @@ export default async function handler(req: any, res: any) {
       8. Bahasa yang digunakan adalah Bahasa Indonesia yang baik dan benar sesuai Ejaan Bahasa Indonesia.
     `;
 
-    const contents: any[] = [];
-    if (data.inputMethod === 'pdf' && data.pdfData) {
-      contents.push({
-        inlineData: {
-          mimeType: "application/pdf",
-          data: data.pdfData
-        }
-      });
-    }
-    contents.push({ text: prompt });
+    const contents: any[] = [{ text: prompt }];
 
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",

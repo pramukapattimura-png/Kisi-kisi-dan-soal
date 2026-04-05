@@ -25,8 +25,6 @@ const initialData: AppData = {
   kelas: '',
   mapel: '',
   tahunPelajaran: '2025/2026',
-  inputMethod: 'manual',
-  pdfData: null,
   cp: '',
   tp: '',
   materiEsensial: '',
